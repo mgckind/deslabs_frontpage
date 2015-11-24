@@ -26,15 +26,14 @@ RUN mkdir -p /var/www/matias/
 
 
 COPY config/matias /etc/nginx/sites-enabled/matias 
-COPY public_html  /var/www/matias/public_html
 
 RUN chmod 755 /var/www
 EXPOSE 80 
-RUN mkdir -p /test
-WORKDIR /test
-RUN cd /test
 
 RUN chown -R www-data:www-data /var/www/matias/public_html
+
+#copy files
+COPY public_html  /var/www/matias/public_html
 RUN /etc/init.d/nginx start
 
 CMD ["nginx", "-g", "daemon off;"]
