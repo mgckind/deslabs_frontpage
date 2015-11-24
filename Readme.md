@@ -19,3 +19,8 @@ Using Node.js
 then
 
     http-server .
+
+## Docker
+
+docker build -t front .
+docker run -d -p 80:80 front

@@ -24,13 +24,9 @@ RUN  rm -f /etc/nginx/sites-enabled/default
 RUN mkdir -p /var/www
 RUN mkdir -p /var/www/matias/
 
-#RUN chown -R root:root /var/www/demoapp/
-#RUN  pip install flask
-#RUN  pip install uwsgi
 
-COPY frontpage/config/matias /etc/nginx/sites-enabled/matias 
-COPY frontpage/public_html  /var/www/matias/public_html
-COPY frontpage/footprint  /var/www/matias/public_html/footprint
+COPY config/matias /etc/nginx/sites-enabled/matias 
+COPY public_html  /var/www/matias/public_html
 
 RUN chmod 755 /var/www
 EXPOSE 80 
