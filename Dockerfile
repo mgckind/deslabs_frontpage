@@ -30,7 +30,6 @@ COPY config/matias /etc/nginx/sites-enabled/matias
 RUN chmod 755 /var/www
 EXPOSE 80 
 
-
 #copy files
 COPY public_html  /var/www/matias/public_html
 RUN chown -R www-data:www-data /var/www/matias/public_html
