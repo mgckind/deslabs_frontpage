@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>DES footprint</title>
+<style>
+@import url(css/maps.css);
+
+#map {
+  width: 1000px;
+  margin: 0 auto;
+}
+
+#map h1 {
+  position: absolute;
+  width: 1000px;
+}
+
+.foreground {
+  fill: none;
+  stroke: #000;
+  stroke-width: 1px;
+  pointer-events: all;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+}
+
+.foreground.zooming {
+  cursor: -webkit-grabbing;
+  cursor: -moz-grabbing;
+}
+
+.graticule {
+  fill: none;
+  stroke: #636B62;
+  stroke-width: .5px;
+  stroke-dasharray: 2,2;
+}
+
+.map {
+  fill: lightgreen;
+  stroke: black;
+  stroke-width: .5px;
+}
+
+.point {
+  fill: green;
+}
+
+</style>
+
+
+<div id="map">
+  <h1>DES footprint</h1>
+</div>
+
+
+<script src="js/d3.min.js"></script>
+<script src="js/d3.geo.projection.min.js"></script>
+<script src="js/topojson.min.js"></script>
+<script src="js/d3.geo.zoom.min.js"></script>
+<script>
+
+var degrees = 180 / Math.PI,
+    width = 1000,
+    height = 600;
+
+var loader = d3.dispatch("footprint"), id = -1;
+
+d3.selectAll("#map")
+    .data([
+      orthographicProjection(width, height)
+          .scale(width/4)
+          .translate([width / 2, height * .56]),
+      //d3.geo.eisenlohr()
+       //   .precision(.1)
+         // .clipExtent([[-1, -1], [width + 1, height + 1]])
+          //.translate([width / 2, height / 2])
+          //.scale(75)
+          //.rotate([0,-30])
+    ])
+  .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .each(function(projection) {
+      var path = d3.geo.path().projection(projection),
+          svg = d3.select(this).call(drawMap, path, true);
+      svg.selectAll(".foreground")
+          .call(d3.geo.zoom().projection(projection)
+            .scaleExtent([projection.scale() * .7, projection.scale() * 70])
+            .on("zoom.redraw", function() {
+              if (d3.event.sourceEvent.preventDefault) d3.event.sourceEvent.preventDefault();
+              svg.selectAll("path").attr("d", path);
+            }));
+      loader.on("footprint." + ++id, function() { svg.selectAll("path").attr("d", path); });
+    });
+
+d3.json("tiles/des_y1.json", function(error, footprint) {
+  d3.selectAll("svg").insert("path", ".foreground")
+      .datum(topojson.feature(footprint, footprint.objects.tiles_y1))
+      .attr("class", "map");
+  loader.footprint();
+});
+
+function drawMap(svg, path, mousePoint) {
+  var projection = path.projection();
+
+  svg.append("path")
+      .datum(d3.geo.graticule())
+      .attr("class", "graticule")
+      .attr("d", path);
+
+  svg.append("path")
+      .datum({type: "Sphere"})
+      .attr("class", "foreground")
+      .attr("d", path)
+      .on("mousedown.grab", function() {
+        var point;
+        if (mousePoint) point = svg.insert("path", ".foreground")
+            .datum({type: "Point", coordinates: projection.invert(d3.mouse(this))})
+            .attr("class", "point")
+            .attr("d", path);
+        var path = d3.select(this).classed("zooming", true),
+            w = d3.select(window).on("mouseup.grab", function() {
+              path.classed("zooming", false);
+              w.on("mouseup.grab", null);
+              if (mousePoint) point.remove();
+            });
+      });
+}
+
+function orthographicProjection(width, height) {
+  return d3.geo.orthographic()
+      .precision(.5)
+      .clipAngle(90)
+      .clipExtent([[-1, -1], [width + 1, height + 1]])
+      .translate([width / 2, height / 2])
+      .scale(width / 2 - 10)
+      .rotate([-10, 40]);
+}
+
+function mollweideProjection(width, height) {
+  return d3.geo.mollweide()
+      .precision(.5)
+      //.clipAngle(90)
+      //.clipExtent([[-1, -1], [width + 1, height + 1]])
+      //.translate([width / 2, height / 2])
+      .scale(165)
+      .rotate([0, 0]);
+}
+
+</script>
+

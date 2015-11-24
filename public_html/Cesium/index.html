@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version (or Chrome Frame if pre-IE11). -->
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>DES Footprint!</title>
+  <script src="Build/Cesium/Cesium.js"></script>
+  <script type="text/javascript" src="Apps/Sandcastle/Sandcastle-header.js"></script>
+  <style>
+      @import url(Build/Cesium/Widgets/widgets.css);
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <div id="toolbar"></div>
+  <script>
+
+     // add terrain elevation
+        var cesiumTerrainProviderHeightmaps = new Cesium.CesiumTerrainProvider({
+            //url : 'https://cesiumjs.org/tilesets/terrain/smallterrain',
+            url : '',
+            credit : ''
+        });
+
+        var mycolor =  new Cesium.Color(1, 0, 0, 0);
+        var mySky = new Cesium.SkyBox({show: false,});
+        var myglobe = new Cesium.Globe();
+
+
+    var viewer = new Cesium.Viewer('cesiumContainer',{
+        contextOptions : { alpha:true},
+        baseLayerPicker : false,
+        animation : false,
+        timeline : false,
+        homeButton : false,
+        geocoder: false,
+        skyBox  : mySky,
+        globe : myglobe,
+        terrainProvider : cesiumTerrainProviderHeightmaps ,
+    });
+
+    var redLine = viewer.entities.add({
+    name : 'Red line on the surface',
+    polyline : {
+        positions : Cesium.Cartesian3.fromDegreesArray([-60, 0,
+                                                        180, 0]),
+        width : 1,
+        material : Cesium.Color.RED
+    }
+});
+
+Sandcastle.addDefaultToolbarButton('Default styling', function() {
+    viewer.dataSources.add(Cesium.GeoJsonDataSource.load('tiles_sv.geojson'));
+});
+
+    //viewer.scene.skyBox.destroy();
+    //viewer.scene.skyBox = undefined;
+    viewer.scene.sun.destroy();
+    viewer.scene.sun = undefined;
+    viewer.scene.moon.destroy();
+    viewer.scene.moon = undefined;
+    //viewer.scene.skyAtmosphere.destroy();
+    //viewer.scene.skyAtmosphere = undefined;
+    //viewer.scene.backgroundColor = new Cesium.Color(1, 0, 0, 0);
+
+    //viewer.dataSources.add(Cesium.GeoJsonDataSource.load('des_y1.topojson'));
+    viewer.dataSources.add(Cesium.GeoJsonDataSource.load('tiles_y1.geojson', 
+     {stroke: Cesium.Color.DARKORANGE,
+        fill: Cesium.Color.ORANGE.withAlpha(0.5),
+        strokeWidth: 1}));
+    //viewer.dataSources.add(Cesium.GeoJsonDataSource.load('tiles_y1.geojson'));
+
+    viewer.dataSources.add(Cesium.GeoJsonDataSource.load('tiles_sv.geojson', 
+       {stroke: Cesium.Color.HOTPINK,
+        fill: Cesium.Color.PINK.withAlpha(0.5),
+        strokeWidth: 1}));
+
+    viewer.dataSources.add(Cesium.GeoJsonDataSource.load('tiles_y2.geojson', 
+       {stroke: Cesium.Color.DARKBLUE,
+        fill: Cesium.Color.BLUE.withAlpha(0.5),
+        strokeWidth: 1}));
+  //viewer.camera.viewRectangle(Cesium.Rectangle.fromDegrees(20.591, 25.837, -30.970, -40.730));
+   viewer.camera.lookAt(Cesium.Cartesian3.fromDegrees(21.17, -30.0), new Cesium.Cartesian3(0.0, -1000.0, 19300000.0));
+   viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+  </script>
+</body>
+</html>
