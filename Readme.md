@@ -22,5 +22,9 @@ then
 
 ## Docker
 
-docker build -t front .
-docker run -d -p 80:80 front
+To run from docker
+
+    docker build -t front .
+
+
+    docker run -d -p 80:80 front
