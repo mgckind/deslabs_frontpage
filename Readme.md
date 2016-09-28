@@ -24,7 +24,7 @@ then
 
 To run from docker
 
-    docker build -t front .
+    docker build -t frontpage .
 
 
-    docker run -d -p 80:80 front
+    docker run -d -p 80:80 frontpage
