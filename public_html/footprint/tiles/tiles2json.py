@@ -7,8 +7,6 @@ from shapely.geometry import shape
 
 tiles=pd.read_csv('unique_tiles_y1a1.csv')
 
-#w = np.where(tiles.DEC_T < -10)[0]
-
 def r2m(ra):
     #return ra
     if ra> 180.:
@@ -43,7 +41,7 @@ ff=open('tiles.geojson','w')
 ff.write(dump)
 ff.close()
 
-if os.path.exists('des.json'):
-    os.remove('des.json')
-                
-os.system('topojson tiles.geojson > des.json')
+#if os.path.exists('des.json'):
+#    os.remove('des.json')
+#                
+#os.system('topojson tiles.geojson > des.json')

@@ -4,21 +4,22 @@
 <title>DES footprint</title>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-<link rel="stylesheet" href="GlobWeb.css">
+<link rel="stylesheet" href="mystyle.css">
 <script  src="require.min.js"></script>
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
 <script type="text/javascript">
 	
-	
+
+
 require(['../src/Globe', '../src/VectorLayer', '../src/WMSLayer','../src/WCSElevationLayer','../src/Navigation','../src/Stats', '../src/SegmentedAnimation', '../src/Numeric','../src/TileWireframeLayer', '../src/FeatureStyle', 
-		"../src/PointRenderer", "../src/LineStringRenderable", "../src/PolygonRenderer"], // Renderers], 
-	function (Globe,VectorLayer,WMSLayer,WCSElevationLayer,Navigation,Stats,SegmentedAnimation,Numeric,TileWireframeLayer,FeatureStyle,EquatorialGridLayer) 
+		"../src/PointRenderer", "../src/LineStringRenderable", "../src/PolygonRenderer","../src/MouseNavigationHandler"], // Renderers], 
+	function (Globe,VectorLayer,WMSLayer,WCSElevationLayer,Navigation,Stats,SegmentedAnimation,Numeric,TileWireframeLayer,FeatureStyle,EquatorialGridLayer,MouseNavigationHandler) 
 {	
 		var cvs = document.getElementById("DES");
 		//cvs.width = window.innerWidth;
 		//cvs.height = window.innerHeight;
-		cvs.width = 700;
-		cvs.height = 450;
+		cvs.width = 900;
+		cvs.height = 650;
 		
 		// Create the globe
 		var globe = new Globe( { canvas: cvs, 
@@ -28,8 +29,15 @@ require(['../src/Globe', '../src/VectorLayer', '../src/WMSLayer','../src/WCSElev
             backgroundColor : "#000"
 		} );
 
+     
+        window.globe = globe;
+
 		// Add mouse navigation
-		var navigation = new Navigation(globe, { inertia: true,});
+		var navigation = new Navigation(globe, { inertia: false, minDistance: 100000,});
+        var canvas = navigation.renderContext.canvas;
+        window.navigation = navigation;
+		
+
 		
 		// Add stats
 		//var stats = new Stats( globe.renderContext, {element: 'fps', verbose: false} );
@@ -54,7 +62,8 @@ require(['../src/Globe', '../src/VectorLayer', '../src/WMSLayer','../src/WCSElev
 				});
 				vectorLayer.addFeatureCollection( data );
 				vectorLayer.visible(true);
-				//vectorLayer.opacity(0.5);
+                window.y2 = vectorLayer;
+				vectorLayer.opacity(0.5);
 
 				globe.addLayer( vectorLayer );
 			},
@@ -72,13 +81,13 @@ require(['../src/Globe', '../src/VectorLayer', '../src/WMSLayer','../src/WCSElev
 				var vectorLayer = new VectorLayer({
 					style : new FeatureStyle({
 						fillColor: [1.,1.,0.,1.],
-                        strokeColor : [0.0,0.0,0.0,1.0],
+                        strokeColor : [0.1,0.1,0.1,1.0],
 						fill: false
 					})
 				});
 				vectorLayer.addFeatureCollection( data );
 				vectorLayer.visible(true);
-				//vectorLayer.opacity(0.5);
+				vectorLayer.opacity(0.5);
 
 				globe.addLayer( vectorLayer );
 			},
@@ -117,14 +126,14 @@ require(['../src/Globe', '../src/VectorLayer', '../src/WMSLayer','../src/WCSElev
 			{
 				var vectorLayer = new VectorLayer({
 					style : new FeatureStyle({
-						fillColor: [1.,1.,0.,1.],
                         strokeColor : [0.0,1.0,1.0,1.0],
 						fill: false
 					})
 				});
 				vectorLayer.addFeatureCollection( data );
 				vectorLayer.visible(true);
-				//vectorLayer.opacity(0.5);
+                window.y1 = vectorLayer;
+				vectorLayer.opacity(0.5);
 
 				globe.addLayer( vectorLayer );
 			},
@@ -140,14 +149,14 @@ require(['../src/Globe', '../src/VectorLayer', '../src/WMSLayer','../src/WCSElev
 			{
 				var vectorLayer = new VectorLayer({
 					style : new FeatureStyle({
-						fillColor: [1.,1.,0.,1.],
                         strokeColor : [1.0,0.0,0.0,1.0],
 						fill: false
 					})
 				});
 				vectorLayer.addFeatureCollection( data );
 				vectorLayer.visible(true);
-				//vectorLayer.opacity(0.5);
+                window.sv = vectorLayer;
+				vectorLayer.opacity(0.5);
 
 				globe.addLayer( vectorLayer );
 			},
@@ -156,8 +165,97 @@ require(['../src/Globe', '../src/VectorLayer', '../src/WMSLayer','../src/WCSElev
 				console.error(thrownError);
 			}
 		});
-});
+
+
+        $.ajax({
+			url: "footprint.json",
+			success: function(data)
+			{
+				var vectorLayer = new VectorLayer({
+					style : new FeatureStyle({
+                        strokeColor : [0.0,0.0,0.0,1.0],
+                        strokeWidth: 5.0,
+						fill: false
+					})
+				});
+				vectorLayer.addFeatureCollection( data );
+				vectorLayer.visible(true);
+				globe.addLayer( vectorLayer );
+			},
+			error: function(thrownError, response, b)
+			{
+				console.error(thrownError);
+			}
+		});
+
+         var _handleMouseDblClick = function(event)
+	    {
+		if (event.button == 0)
+		{
+			var pos = navigation.globe.renderContext.getXYRelativeToCanvas(event);
+			var geo = navigation.globe.getLonLatFromPixel( pos[0], pos[1] );
+            var max_d = Number.POSITIVE_INFINITY;
+            var tile = -1
+
 		
+			if (geo)
+			{   
+                for (i=0; i < y2.features.length-1; i++){
+                    var ra = y2.features[i].properties.RA_C;
+                    if (ra > 180.) {
+                        ra = ra - 360.;
+                        };
+                    var dec = y2.features[i].properties.DEC_C;
+                    var dist = Math.pow(( ra - geo[0]),2) + Math.pow((dec - geo[1]),2);
+                    if (dist < max_d){
+                        max_d = dist;
+                        var tile = i;
+                        };
+                    }
+                console.log(geo);
+                var tilename = y2.features[tile].properties.tilename;
+                var ra_t = y2.features[tile].properties.RA_C;
+                var dec_t = y2.features[tile].properties.DEC_C;
+                if (ra_t > 180.) {
+                ra_t = ra_t - 360.;
+                };
+
+				navigation.zoomTo([ra_t,dec_t],500000,1000);
+
+                document.getElementById("title").innerHTML = "Tile: " + tilename + "( "+ra_t+","+dec_t+" )";
+
+				if (window.tempLayer === undefined){
+                    var ju = 0;
+                }
+                else{
+                    globe.removeLayer( window.tempLayer );
+                }
+
+                var tempLayer = new VectorLayer({
+				style : new FeatureStyle({
+						fillColor: [1.,1.,0.,1.],
+                        strokeColor : [0.0,0.0,0.0,1.0],
+                        strokeWidth: 3.5,
+						fill: false,
+					})
+				});
+				tempLayer.addFeature(y2.features[tile]);
+				tempLayer.visible(true);
+
+				globe.addLayer( tempLayer );
+                window.tempLayer = tempLayer;
+
+			}
+		}
+	};
+
+
+		canvas.addEventListener("dblclick", _handleMouseDblClick);
+         
+
+});
+
+
 
 
 </script>
@@ -171,28 +269,85 @@ require(['../src/Globe', '../src/VectorLayer', '../src/WMSLayer','../src/WCSElev
 
     <div class="col-md-9">
     <h3><center>DES footprint</center></h3>
-    <canvas id="DES" style="border: none;" width="800" height="450"></canvas> 
+    <h4><center>
+    <div id="title"></div>
+    </center></h4>
+    <canvas id="DES" class="box" width="800" height="650"></canvas> 
     </div>
 
     <div class="col-md-3">
     <h3><center> Legend </center></h3>
     <svg width="30" height="30">
-    <rect width="100%" height="100%" style="fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)" />
+    <rect width="100%" height="100%" style="fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)"  onclick="selY2();"/>
     </svg> Y2A1 <br>
     <svg width="30" height="30">
-    <rect width="100%" height="100%" style="fill:rgb(0,255,255);stroke-width:3;stroke:rgb(0,0,0)" />
+    <rect width="100%" height="100%" style="fill:rgb(0,255,255);stroke-width:3;stroke:rgb(0,0,0)" onclick="selY1();"/>
     </svg> Y1A1 <br>
     <svg width="30" height="30">
-    <rect width="100%" height="100%" style="fill:rgb(255,0,0);stroke-width:3;stroke:rgb(0,0,0)" />
+    <rect width="100%" height="100%" style="fill:rgb(255,0,0);stroke-width:3;stroke:rgb(0,0,0)" onclick="selSV();"/>
     </svg> SVA1 <br>
     <svg width="30" height="30">
     <line x1="0" y1="100%" x2="100%" y2="100%" style="stroke:rgb(255,0,0);stroke-width:3" />
     </svg> galactic plane
+    <form>
+  Position (RA,DEC):<input type="text" name="position" id="position"><br>
+  <input type="button" onclick="GoToPosition();" value="Submit">  
+</form>
     </div>
     
     </div>
     </div>
 </body>
+
+<script>
+
+function GoToPosition(){
+    var position = document.getElementById("position").value.split(","); 
+    var ra1 = parseFloat(position[0]);
+    var dec1 = parseFloat(position[1]);
+    if (ra1 > 180.) {
+        ra1 = ra1 - 360.;
+        };
+   navigation.zoomTo([ra1,dec1],500000,1000);
+
+
+};
+function selY2(){
+    
+    if (y2._visible == true) {
+        y2._visible = false;
+        globe.refresh();
+    }
+    else{
+        y2._visible = true;
+        globe.refresh();
+    }
+}
+
+function selY1(){
+    if (y1._visible == true) {
+        y1._visible = false;
+        globe.refresh();
+    }
+    else{
+        y1._visible = true;
+        globe.refresh();
+    }
+}
+
+function selSV(){
+    
+    if (sv._visible == true) {
+        sv._visible = false;
+        globe.refresh();
+    }
+    else{
+        sv._visible = true;
+        globe.refresh();
+    }
+}
+		
+</script>
 
 </html>
 
