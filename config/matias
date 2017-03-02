@@ -32,7 +32,7 @@ server {
    }
    location  /status/ {
 
-        proxy_pass http://10.109.31.120:3000/;
+        proxy_pass http://deslabs.ncsa.illinois.edu:30563/;
 
    }
    location  /wetty {
