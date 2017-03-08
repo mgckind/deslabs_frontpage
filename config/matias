@@ -35,9 +35,16 @@ server {
         proxy_pass http://deslabs.ncsa.illinois.edu:30563/;
 
    }
+
+	 location /easycli {
+	 			rewrite ^/easycli(.*) /wetty/$1 break;
+        proxy_pass http://deslabs.ncsa.illinois.edu:30137/wetty;
+
+	 }
+
    location  /wetty {
 
-        proxy_pass http://10.102.102.216/wetty;
+        proxy_pass http://deslabs.ncsa.illinois.edu:30137/wetty;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
